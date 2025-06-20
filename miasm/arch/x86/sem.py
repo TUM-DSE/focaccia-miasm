@@ -485,6 +485,23 @@ def xadd(_, instr, dst, src):
     e.append(m2_expr.ExprAssign(dst, result))
     return e, []
 
+def adcx(_, instr, dst, src):
+    e = []
+
+    result = dst + src
+
+    e += update_flag_add_cf(src, dst, result)
+    e.append(m2_expr.ExprAssign(dst, result))
+    return e, []
+
+def adox(_, instr, dst, src):
+    e = []
+
+    result = dst + src
+
+    e += update_flag_add_of(src, dst, result)
+    e.append(m2_expr.ExprAssign(dst, result))
+    return e, []
 
 def adc(_, instr, dst, src):
     e = []
@@ -5148,6 +5165,8 @@ mnemo_func = {'mov': mov,
               'add': add,
               'xadd': xadd,
               'adc': adc,
+              'adcx': adcx,
+              'adox': adox,
               'sub': sub,
               'sbb': sbb,
               'neg': neg,
