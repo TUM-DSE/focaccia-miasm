@@ -4372,7 +4372,8 @@ def blsi(_, instr, dst, src):
     e = []
 
     arg1 = m2_expr.ExprInt(0, src.size)
-    result = arg1 - src
+    neg_src = arg1 - src
+    result = neg_src & src
 
     e += update_flag_zf(result)
     e += update_flag_nf(result)
