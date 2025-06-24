@@ -733,7 +733,7 @@ class mn_x86(cls_mn):
 
     @classmethod
     def mod_fields(cls, fields):
-        prefix = [d_g1, d_g2, d_rex_p, d_rex_w, d_rex_r, d_rex_x, d_rex_b]
+        prefix = [d_g1, d_g2, d_rex_p, d_rex_w, d_rex_r, d_rex_x, d_rex_b, d_vex, d_vex_l, d_vex_p, d_vex_v, d_vex_m]
         return prefix + fields
 
     @classmethod
@@ -773,6 +773,11 @@ class mn_x86(cls_mn):
                         'rex_r': 0,
                         'rex_x': 0,
                         'rex_b': 0,
+                        'vex_l': 0,
+                        'vex_p': 0,
+                        'vex_v': 0,
+                        'vex_m': 0,
+                        'vex' : 0,
                         'prefix': b"",
                         'prefixed': b"",
                         }
@@ -806,6 +811,8 @@ class mn_x86(cls_mn):
                 break
             pre_dis_info['prefix'] += c
             offset += 1
+        vex3_prefix = b'\xc4'
+        vex2_prefix = b'\xc5'
         rex_prefixes = b'@ABCDEFGHIJKLMNO'
         if mode == 64 and c in rex_prefixes:
             while c in rex_prefixes:
@@ -818,6 +825,49 @@ class mn_x86(cls_mn):
             pre_dis_info['rex_r'] = (x >> 2) & 1
             pre_dis_info['rex_x'] = (x >> 1) & 1
             pre_dis_info['rex_b'] = (x >> 0) & 1
+        elif mode == 64 and c == vex3_prefix:
+            offset += 1
+            c = ord(v.getbytes(offset))
+            pre_dis_info['vex'] = 1
+            pre_dis_info['rex_r'] = ((c >> 7) ^ 1) & 1
+            pre_dis_info['rex_x'] = ((c >> 6) ^ 1) & 1
+            pre_dis_info['rex_b'] = ((c >> 5) ^ 1) & 1
+            pre_dis_info['vex_m'] = (c & int('0b11111', 2))
+
+            offset += 1
+            c = ord(v.getbytes(offset))
+            pre_dis_info['rex_w'] = (c >> 7) & 1
+            pre_dis_info['vex_v'] = ((c >> 3) ^ 15) & 15
+            pre_dis_info['vex_l'] = (c >> 2) & 1
+            pre_dis_info['vex_p'] = c & int('0b11', 2)
+            offset += 1
+
+            if pre_dis_info['vex_p'] == 1:
+                pre_dis_info['opmode'] = 1
+            elif pre_dis_info['vex_p'] == 3:
+                pre_dis_info['g1'] = 2
+            elif pre_dis_info['vex_p'] == 2:
+                pre_dis_info['g1'] = 12
+
+        elif mode == 64 and c == vex2_prefix and v.getlen() > 2:
+            offset += 1
+            c = ord(v.getbytes(offset))
+            pre_dis_info['vex'] = 1
+            pre_dis_info['rex_r'] = ((c >> 7) ^ 1) & 1
+            pre_dis_info['rex_x'] = 0
+            pre_dis_info['rex_b'] = 0
+            pre_dis_info['rex_w'] = 0
+            pre_dis_info['vex_l'] = (c >> 2) & 1
+            pre_dis_info['vex_p'] = c & int('0b11', 2)
+            offset += 1
+
+            if pre_dis_info['vex_p'] == 1:
+                pre_dis_info['opmode'] = 1
+            elif pre_dis_info['vex_p'] == 3:
+                pre_dis_info['g1'] = 2
+            elif pre_dis_info['vex_p'] == 2:
+                pre_dis_info['g1'] = 12
+
         elif pre_dis_info.get('g1', None) == 12 and c in [b'\xa6', b'\xa7', b'\xae', b'\xaf']:
             pre_dis_info['g1'] = 4
         return pre_dis_info, v, mode, offset, offset - offset_o
@@ -887,11 +937,23 @@ class mn_x86(cls_mn):
         self.rex_x.value = pre_dis_info['rex_x']
         self.rex_p.value = pre_dis_info['rex_p']
 
+        self.vex.value = pre_dis_info['vex']
+        self.vex_l.value = pre_dis_info['vex_l']
+        self.vex_p.value = pre_dis_info['vex_p']
+        self.vex_v.value = pre_dis_info['vex_v']
+        self.vex_m.value = pre_dis_info['vex_m']
+
         if hasattr(self, 'no_rex') and\
            (self.rex_r.value or self.rex_b.value or
             self.rex_x.value or self.rex_p.value):
             return False
 
+        if self.vex_m.value == 1 and not hasattr(self, 'pref_0f'):
+            return False
+        if self.vex_m.value == 2 and not hasattr(self, 'pref_0f38'):
+            return False
+        if self.vex_m.value == 3 and not hasattr(self, 'pref_0f3a'):
+            return False
 
         self.g1.value = pre_dis_info['g1']
         self.g2.value = pre_dis_info['g2']
@@ -918,10 +980,50 @@ class mn_x86(cls_mn):
             rex |= 0x2
         if self.rex_b.value:
             rex |= 0x1
-        if rex != 0x40 or self.rex_p.value == 1:
+        if (rex != 0x40 and not self.vex.value) or self.rex_p.value == 1:
             v = utils.int_to_byte(rex) + v
             if hasattr(self, 'no_rex'):
                 return None
+
+        vex_byte1 = 0xc4
+        vex_byte2 = 0x00
+        vex_byte3 = 0x00
+
+        m_prefix = [field.fname for field in self.fields_order if 'pref_0f' in field.fname]
+        if m_prefix:
+            if m_prefix[0] == 'pref_0f':
+                vex_byte2 |= 0x01
+            elif m_prefix[0] == 'pref_0f38':
+                vex_byte2 |= 0x02
+            elif m_prefix[0] == 'pref_0f3a':
+                vex_byte2 |= 0x03
+
+        # TODO: L and p 
+        if m_prefix and m_prefix[0] == 'pref_0f' and not self.rex_w.value and not self.rex_b.value and ((hasattr(self, 'mod') and self.mod.value == 3) or not self.rex_x.value): # VEX2
+            print("test")
+            vex_version = 2
+            vex_byte1 = 0x00
+            vex_byte2 = 0xc5
+
+            if not hasattr(self, 'reg') or not self.rex_r.value:
+                vex_byte3 |= 0x80
+
+        else:
+            vex_version = 3
+            if not hasattr(self, 'reg') or not self.rex_r.value:
+                vex_byte2 |= 0x80
+            if (hasattr(self, 'mod') and self.mod.value == 3) or not self.rex_x.value:
+                vex_byte2 |= 0x40
+            if not self.rex_b.value:
+                vex_byte2 |= 0x20
+
+            if self.rex_w.value:
+                vex_byte3 |= 0x80
+
+        if self.vex.value == 1:
+            vex_byte3 |= ((15 - self.vex_v.value) << 3)
+            vex = (vex_byte1 << 16) | (vex_byte2 << 8) | vex_byte3
+            v = vex.to_bytes(vex_version, 'big') + v
 
         if hasattr(self, 'prefixed'):
             v = self.prefixed.default + v
@@ -2104,7 +2206,7 @@ class x86_rm_arg(x86_arg):
 
                 mod, re, rm = getmodrm(modrm)
                 # check re on parent
-                if re != p.reg.value:
+                if hasattr(p, 'reg') and re != p.reg.value:
                     continue
 
                 if sib is not None:
@@ -2643,6 +2745,33 @@ class x86_reg(x86_rm_reg):
 
     def setrexsize(self, v):
         self.parent.rex_b.value = v
+
+class x86_vex_reg(x86_rm_reg):
+    # self.lmask = 15
+
+    def decode(self, v):
+        p = self.parent
+        
+        self.expr = size2gpregs[v_opmode(p)].expr[p.vex_v.value]
+        
+        return self.expr is not None
+
+    def encode(self):
+        opmode = self.parent.mode
+        size = self.expr.size
+
+        if opmode == 64 and size == 64:
+            self.parent.rex_w.value = 1
+        else:
+            self.parent.rex_w.value = 0
+
+        r = size2gpregs[size]
+        if self.expr in r.expr:
+            i = r.expr.index(self.expr)
+
+        self.parent.vex_v.value = i
+        self.parent.vex.value = 1
+        return True
 
 
 class x86_reg_modrm(x86_rm_reg):
@@ -3199,6 +3328,16 @@ d_rex_r = bs(l=0, cls=(bs_fbit,), fname="rex_r")
 d_rex_x = bs(l=0, cls=(bs_fbit,), fname="rex_x")
 d_rex_b = bs(l=0, cls=(bs_fbit,), fname="rex_b")
 
+d_vex = bs(l=0, cls=(bs_fbit,), fname="vex")
+d_vex_l = bs(l=0, cls=(bs_fbit,), fname="vex_l")
+d_vex_p = bs(l=0, cls=(bs_fbit,), fname="vex_p")
+d_vex_v = bs(l=0, cls=(bs_fbit,), fname="vex_v")
+d_vex_m = bs(l=0, cls=(bs_fbit,), fname="vex_m")
+
+pref_0f = bs(l=0, fname="pref_0f")
+pref_0f38 = bs(l=0, fname="pref_0f38")
+pref_0f3a = bs(l=0, fname="pref_0f3a")
+
 d_g1 = bs(l=0, cls=(bs_fbit,), fname="g1")
 d_g2 = bs(l=0, cls=(bs_fbit,), fname="g2")
 
@@ -3315,6 +3454,7 @@ reg = bs(l=3, cls=(x86_reg, ), order =1, fname = "reg")
 
 reg_modrm = bs(l=3, cls=(x86_reg_modrm, ), order =1, fname = "reg")
 
+vex_reg = bs(l=0, cls=(x86_vex_reg, ), order =1, fname = "vex_reg")
 
 regnoarg = bs(l=3, default_val="000", order=1, fname="reg")
 segm = bs(l=3, cls=(x86_rm_segm, ), order =1, fname = "reg")
@@ -3637,6 +3777,8 @@ addop("fild", [bs("11011"), wd, bs("11")] + rmmod(d0, rm_arg_wd))
 addop("fild", [bs8(0xdf)] + rmmod(d5, rm_arg_m64))
 
 addop("fincstp", [bs8(0xd9), bs8(0xf7)])
+
+addop("blsi", [pref_0f38, bs8(0xf3), vex_reg] + rmmod(bs("011"), rm_arg), [vex_reg, rm_arg])
 
 # addop("finit", [bs8(0x9b), bs8(0xdb), bs8(0xe3)])
 addop("fninit", [bs8(0xdb), bs8(0xe3)])

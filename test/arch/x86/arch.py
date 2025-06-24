@@ -2583,6 +2583,16 @@ reg_tests = [
     (m16, "00000000    LDS        SI, WORD PTR [BX + SI]",
      "C530"),
 
+    #### BMI operations
+    ####
+
+    (m64, "00000000    BLSI       RAX, QWORD PTR [EBX]",
+    "67c4e2f8f31b"),
+    (m64, "00000000    BLSI       EAX, EBX",
+    "c4e278f3db"),
+    (m64, "00000000    BLSI       EAX, R14D",
+    "c4c278f3de"),
+
     #### MMX/SSE/AVX operations
     ####
 
