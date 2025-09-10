@@ -3779,6 +3779,7 @@ addop("fild", [bs8(0xdf)] + rmmod(d5, rm_arg_m64))
 addop("fincstp", [bs8(0xd9), bs8(0xf7)])
 
 addop("blsi", [pref_0f38, bs8(0xf3), vex_reg] + rmmod(bs("011"), rm_arg), [vex_reg, rm_arg])
+addop("andn", [pref_0f38, bs8(0xf2), vex_reg] + rmmod(rmreg, rm_arg), [rmreg, vex_reg, rm_arg])
 
 # addop("finit", [bs8(0x9b), bs8(0xdb), bs8(0xe3)])
 addop("fninit", [bs8(0xdb), bs8(0xe3)])

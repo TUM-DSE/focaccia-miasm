@@ -4387,6 +4387,21 @@ def blsi(_, instr, dst, src):
     e.append(m2_expr.ExprAssign(dst, result))
     return e, []
 
+def andn(_, instr, dst, src1, src2):
+    e = []
+
+    arg1 = m2_expr.ExprInt(0, src1.size)
+    neg_src1 = arg1 - src1
+    result = neg_src1 & src2
+
+    e += update_flag_zf(result)
+    e += update_flag_nf(result)
+    e.append(m2_expr.ExprAssign(of, m2_expr.ExprInt(0, of.size)))
+    e.append(m2_expr.ExprAssign(cf, m2_expr.ExprInt(0, cf.size)))
+
+    e.append(m2_expr.ExprAssign(dst, result))
+    return e, []
+
 def pshufb(_, instr, dst, src):
     e = []
     if dst.size == 64:
@@ -5519,6 +5534,7 @@ mnemo_func = {'mov': mov,
 
               # BMI operations
               "blsi": blsi,
+              "andn": andn,
 
               #
               # MMX/AVX/SSE operations

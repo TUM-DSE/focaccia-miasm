@@ -2593,6 +2593,9 @@ reg_tests = [
     (m64, "00000000    BLSI       EAX, R14D",
     "c4c278f3de"),
 
+    (m64, "00000000    ANDN       RAX, RBX, RCX",
+    "c4e2e0f2c1"),
+
     #### MMX/SSE/AVX operations
     ####
 
