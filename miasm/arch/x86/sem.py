@@ -4379,10 +4379,9 @@ def blsi(_, instr, dst, src):
     e += update_flag_nf(result)
     e.append(m2_expr.ExprAssign(of, m2_expr.ExprInt(0, of.size)))
 
-    if src == 0:
-        e.append(m2_expr.ExprAssign(cf, m2_expr.ExprInt(0, cf.size)))
-    else:
-        e.append(m2_expr.ExprAssign(cf, m2_expr.ExprInt(1, cf.size)))
+    e.append(m2_expr.ExprAssign(cf, m2_expr.ExprCond(src,
+                                                     m2_expr.ExprInt(1, 1),
+                                                     m2_expr.ExprInt(0, 1))))
 
     e.append(m2_expr.ExprAssign(dst, result))
     return e, []
