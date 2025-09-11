@@ -4402,6 +4402,22 @@ def andn(_, instr, dst, src1, src2):
     e.append(m2_expr.ExprAssign(dst, result))
     return e, []
 
+def bextr(_, instr, dst, src1, src2):
+    e = []
+
+    # TODO: change zero extension to 512 bits when AVX is supported
+    start = (src2 & m2_expr.ExprInt(0xFF, src2.size)).zeroExtend(256)
+    length = ((src2 & m2_expr.ExprInt(0xFF00, src2.size)) >> m2_expr.ExprInt(8, src2.size)).zeroExtend(256)
+
+    tmp = src1.zeroExtend(256) >> start
+    mask = m2_expr.ExprInt(0, 256).mask >> (m2_expr.ExprInt(256, 256) - length)
+
+    tmp = tmp & mask
+    result = tmp[:dst.size]
+
+    e.append(m2_expr.ExprAssign(dst, result))
+    return e, []
+
 def pshufb(_, instr, dst, src):
     e = []
     if dst.size == 64:
@@ -5535,6 +5551,7 @@ mnemo_func = {'mov': mov,
               # BMI operations
               "blsi": blsi,
               "andn": andn,
+              "bextr": bextr,
 
               #
               # MMX/AVX/SSE operations

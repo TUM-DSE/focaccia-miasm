@@ -948,6 +948,11 @@ class mn_x86(cls_mn):
             self.rex_x.value or self.rex_p.value):
             return False
 
+        if self.vex.value == 0 and (hasattr(self, 'pref_0f')
+                                    or hasattr(self, 'pref_0f38')
+                                    or hasattr(self, 'pref_0f3a')):
+            return False
+
         if self.vex_m.value == 1 and not hasattr(self, 'pref_0f'):
             return False
         if self.vex_m.value == 2 and not hasattr(self, 'pref_0f38'):
@@ -3780,6 +3785,7 @@ addop("fincstp", [bs8(0xd9), bs8(0xf7)])
 
 addop("blsi", [pref_0f38, bs8(0xf3), vex_reg] + rmmod(bs("011"), rm_arg), [vex_reg, rm_arg])
 addop("andn", [pref_0f38, bs8(0xf2), vex_reg] + rmmod(rmreg, rm_arg), [rmreg, vex_reg, rm_arg])
+addop("bextr", [pref_0f38, bs8(0xf7), vex_reg] + rmmod(rmreg, rm_arg), [rmreg, rm_arg, vex_reg])
 
 # addop("finit", [bs8(0x9b), bs8(0xdb), bs8(0xe3)])
 addop("fninit", [bs8(0xdb), bs8(0xe3)])
