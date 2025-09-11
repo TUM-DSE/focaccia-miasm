@@ -2599,6 +2599,9 @@ reg_tests = [
     (m64, "00000000    BEXTR      RAX, RBX, RCX",
     "c4e2f0f7c3"),
 
+    (m64, "00000000    BLSMSK     RAX, RBX",
+    "c4e2f8f3d3"),
+
     #### MMX/SSE/AVX operations
     ####
 
