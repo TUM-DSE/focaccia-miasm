@@ -2605,6 +2605,15 @@ reg_tests = [
     (m64, "00000000    BLSR       RAX, RBX",
     "c4e2f8f3cb"),
 
+    (m64, "00000000    TZCNT      RAX, RBX",
+    "f3480fbcc3"),
+
+    (m64, "00000000    TZCNT      EAX, EBX",
+    "f30fbcc3"),
+
+    (m64, "00000000    TZCNT      AX, BX",
+    "66f30fbcc3"),
+
     (m64, "00000000    BZHI       RAX, RBX, RCX",
     "c4e2f0f5c3"),
 

@@ -953,6 +953,9 @@ class mn_x86(cls_mn):
                                     or hasattr(self, 'pref_0f3a')):
             return False
 
+        if hasattr(self, 'no_rep') and b'\xf3' in pre_dis_info['prefix']:
+            return False
+
         if self.vex_m.value == 1 and not hasattr(self, 'pref_0f'):
             return False
         if self.vex_m.value == 2 and not hasattr(self, 'pref_0f38'):
@@ -3366,6 +3369,7 @@ pref_66 = bs(l=0, fname="prefixed", default=b"\x66")
 no_xmm_pref = bs(l=0, fname="no_xmm_pref")
 
 no_rex = bs(l=0, fname="no_rex")
+no_rep = bs(l=0, fname="no_rep")
 
 sib_scale = bs(l=2, cls=(bs_cond_scale,), fname = "sib_scale")
 sib_index = bs(l=3, cls=(bs_cond_index,), fname = "sib_index")
@@ -3645,7 +3649,7 @@ addop("bndmov", [bs8(0x0f), bs8(0x1b), pref_66, bs_mode64] +
 
 
 
-addop("bsf", [bs8(0x0f), bs8(0xbc)] + rmmod(rmreg))
+addop("bsf", [bs8(0x0f), bs8(0xbc), no_rep] + rmmod(rmreg))
 addop("bsr", [bs8(0x0f), bs8(0xbd), mod,
     rmreg, rm, sib_scale, sib_index, sib_base, disp, rm_arg])
 
@@ -3789,6 +3793,7 @@ addop("bextr", [pref_0f38, bs8(0xf7), vex_reg] + rmmod(rmreg, rm_arg), [rmreg, r
 addop("blsmsk", [pref_0f38, bs8(0xf3), vex_reg] + rmmod(bs("010"), rm_arg), [vex_reg, rm_arg])
 addop("blsr", [pref_0f38, bs8(0xf3), vex_reg] + rmmod(bs("001"), rm_arg), [vex_reg, rm_arg])
 addop("bzhi", [pref_0f38, bs8(0xf5), vex_reg] + rmmod(rmreg, rm_arg), [rmreg, rm_arg, vex_reg])
+addop("tzcnt", [bs8(0x0f), bs8(0xbc), pref_f3] + rmmod(rmreg, rm_arg), [rmreg, rm_arg])
 
 # addop("finit", [bs8(0x9b), bs8(0xdb), bs8(0xe3)])
 addop("fninit", [bs8(0xdb), bs8(0xe3)])

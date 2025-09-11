@@ -4451,6 +4451,21 @@ def blsr(_, instr, dst, src):
     e.append(m2_expr.ExprAssign(dst, result))
     return e, []
 
+def tzcnt(ir, instr, dst, src):
+    e = []
+
+    operand_size = m2_expr.ExprInt(dst.size, dst.size)
+
+    result = m2_expr.ExprCond(src, m2_expr.ExprOp("cnttrailzeros", src), operand_size)
+
+    e.append(m2_expr.ExprAssign(cf, m2_expr.ExprCond(m2_expr.ExprOp("FLAG_EQ_CMP", result, operand_size),
+                                                     m2_expr.ExprInt(1, 1),
+                                                     m2_expr.ExprInt(0, 1))))
+
+    e += update_flag_zf(result)
+    e.append(m2_expr.ExprAssign(dst, result))
+    return e, []
+
 def bzhi(_, instr, dst, src1, src2):
     e = []
 
@@ -5611,6 +5626,7 @@ mnemo_func = {'mov': mov,
               "bextr": bextr,
               "blsmsk": blsmsk,
               "blsr": blsr,
+              "tzcnt": tzcnt,
               "bzhi": bzhi,
 
               #
