@@ -4451,6 +4451,30 @@ def blsr(_, instr, dst, src):
     e.append(m2_expr.ExprAssign(dst, result))
     return e, []
 
+def bzhi(_, instr, dst, src1, src2):
+    e = []
+
+    operand_size = m2_expr.ExprInt(dst.size, dst.size)
+    index = src2[:7].zeroExtend(dst.size)
+    mask = m2_expr.ExprInt(0, dst.size).mask >> (operand_size
+                                                 - index
+                                                 - m2_expr.ExprInt(1, dst.size))
+
+    result = m2_expr.ExprCond(m2_expr.ExprOp("FLAG_SIGN_SUB", index, operand_size),
+                              src1 & mask, src1)
+
+
+    operand_size_dec = operand_size - m2_expr.ExprInt(1, dst.size)
+    e.append(m2_expr.ExprAssign(cf, m2_expr.ExprCond(m2_expr.ExprOp("FLAG_SIGN_SUB", operand_size_dec, index),
+                                                     m2_expr.ExprInt(1, 1),
+                                                     m2_expr.ExprInt(0, 1))))
+
+    e += update_flag_zf(result)
+    e += update_flag_nf(result)
+    e.append(m2_expr.ExprAssign(of, m2_expr.ExprInt(0, of.size)))
+    e.append(m2_expr.ExprAssign(dst, result))
+    return e, []
+
 def pshufb(_, instr, dst, src):
     e = []
     if dst.size == 64:
@@ -5587,6 +5611,7 @@ mnemo_func = {'mov': mov,
               "bextr": bextr,
               "blsmsk": blsmsk,
               "blsr": blsr,
+              "bzhi": bzhi,
 
               #
               # MMX/AVX/SSE operations
