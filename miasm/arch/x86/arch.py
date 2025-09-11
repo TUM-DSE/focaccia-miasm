@@ -3787,6 +3787,7 @@ addop("blsi", [pref_0f38, bs8(0xf3), vex_reg] + rmmod(bs("011"), rm_arg), [vex_r
 addop("andn", [pref_0f38, bs8(0xf2), vex_reg] + rmmod(rmreg, rm_arg), [rmreg, vex_reg, rm_arg])
 addop("bextr", [pref_0f38, bs8(0xf7), vex_reg] + rmmod(rmreg, rm_arg), [rmreg, rm_arg, vex_reg])
 addop("blsmsk", [pref_0f38, bs8(0xf3), vex_reg] + rmmod(bs("010"), rm_arg), [vex_reg, rm_arg])
+addop("blsr", [pref_0f38, bs8(0xf3), vex_reg] + rmmod(bs("001"), rm_arg), [vex_reg, rm_arg])
 
 # addop("finit", [bs8(0x9b), bs8(0xdb), bs8(0xe3)])
 addop("fninit", [bs8(0xdb), bs8(0xe3)])

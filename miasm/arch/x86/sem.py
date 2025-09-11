@@ -4434,6 +4434,23 @@ def blsmsk(_, instr, dst, src):
     e.append(m2_expr.ExprAssign(dst, result))
     return e, []
 
+def blsr(_, instr, dst, src):
+    e = []
+
+    tmp = src - m2_expr.ExprInt(1, src.size)
+    result = tmp & src
+
+    e += update_flag_zf(result)
+    e += update_flag_nf(result)
+    e.append(m2_expr.ExprAssign(of, m2_expr.ExprInt(0, of.size)))
+
+    e.append(m2_expr.ExprAssign(cf, m2_expr.ExprCond(src,
+                                                     m2_expr.ExprInt(0, 1),
+                                                     m2_expr.ExprInt(1, 1))))
+
+    e.append(m2_expr.ExprAssign(dst, result))
+    return e, []
+
 def pshufb(_, instr, dst, src):
     e = []
     if dst.size == 64:
@@ -5569,6 +5586,7 @@ mnemo_func = {'mov': mov,
               "andn": andn,
               "bextr": bextr,
               "blsmsk": blsmsk,
+              "blsr": blsr,
 
               #
               # MMX/AVX/SSE operations
