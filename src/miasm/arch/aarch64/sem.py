@@ -2156,7 +2156,54 @@ def smulh(arg1, arg2, arg3):
 def smull(arg1, arg2, arg3):
     arg1 = (arg2.signExtend(64) * arg3.signExtend(64))[64:]
 
+def ldsmax(ir, instr, arg1, arg2, arg3):
+    # XXX TODO: memory barrier
+    # TODO: byte and halfword comparisons
+    e = []
 
+    if arg1.size == 32:
+        regs = gpregs32_expr
+        zero_reg = WZR
+    else:
+        regs = gpregs64_expr
+        zero_reg = XZR
+
+    # TODO endianness
+
+    # Label for path that updates memory value
+    # Jumps to loc_do after
+    loc_exchange = ExprLoc(ir.loc_db.add_location(), ir.IRDst.size)
+
+    # Label for storing old value into destination register
+    loc_no_exchange = ExprLoc(ir.loc_db.add_location(), ir.IRDst.size)
+
+    # Label for location after ldsmax instruction
+    loc_next = ExprLoc(ir.get_next_loc_key(instr), ir.IRDst.size)
+
+    dest_reg = arg1
+    comp_value = arg2
+    mem_index = arg3.args[0]
+
+    data = ExprMem(mem_index, comp_value.size)
+    
+    subs(ir, instr, zero_reg, comp_value, data)
+    gt_cond = cond2expr['GT']
+
+    cond = ExprCond(gt_cond, loc_exchange, loc_no_exchange)
+    e.append(ExprAssign(ir.IRDst, cond))
+
+    e_exchange = []
+    e_exchange.append(ExprAssign(dest_reg, data))
+    e_exchange.append(ExprAssign(data, comp_value))
+    e_exchange.append(ExprAssign(ir.IRDst, loc_next))
+    blk_exchange = IRBlock(ir.loc_db, loc_exchange.loc_key, [AssignBlock(e_exchange, instr)])
+
+    e_no_exchange = []
+    e_exchange.append(ExprAssign(dest_reg, data))
+    e_no_exchange.append(ExprAssign(ir.IRDst, loc_next))
+    blk_no_exchange = IRBlock(ir.loc_db, loc_no_exchange.loc_key, [AssignBlock(e_no_exchange, instr)])
+
+    return e, [blk_exchange, blk_no_exchange]
 
 mnemo_func = sbuild.functions
 mnemo_func.update({
@@ -2274,7 +2321,13 @@ mnemo_func.update({
     'dmb': dmb,
     'tlbi': tlbi,
     'clrex': clrex,
-    'ic': ic
+    'ic': ic,
+
+    # TODO: other synchronization variants
+    'ldsmaxb': ldsmax,
+    'ldsmaxh': ldsmax,
+    'ldsmaxw': ldsmax,
+    'ldsmax': ldsmax,
 })
 
 
