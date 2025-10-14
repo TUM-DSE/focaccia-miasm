@@ -59,7 +59,7 @@ include-package-data = true
 
 [[tool.setuptools.ext-modules]]
 name = "miasm.jitter.VmMngr"
-optional = false
+optional = true
 sources = [
   "src/miasm/jitter/vm_mngr.c",
   "src/miasm/jitter/vm_mngr_py.c",
