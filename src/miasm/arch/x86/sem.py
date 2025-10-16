@@ -5259,6 +5259,17 @@ def fxrstor(_ir, _instr, _dst):
     # Implemented as a NOP for now
     return [], []
 
+# TODO: set initial state for XCR0
+def xgetbv(ir, inst):
+    e = []
+    index = mRCX[32]
+    dst_hi = mRDX[32]
+    dst_lo = mRAX[32]
+
+    e.append(m2_expr.ExprAssign(dst_lo, XCR0[:32]))
+    e.append(m2_expr.ExprAssign(dst_hi, XCR0[32:]))
+
+    return e, []
 
 mnemo_func = {'mov': mov,
               'xchg': xchg,
@@ -5875,6 +5886,10 @@ mnemo_func = {'mov': mov,
               "endbr32": endbr32,
               "fxsave": fxsave,
               "fxrstor": fxrstor,
+
+              # XCR
+              # TODO: is this the right place?
+              "xgetbv": xgetbv,
               }
 
 

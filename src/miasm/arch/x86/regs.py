@@ -60,6 +60,9 @@ r32_eax = reg_info([regs32_str[0]], [regs32_expr[0]])
 r64_eax = reg_info([regs64_str[0]], [regs64_expr[0]])
 
 r08_ecx = reg_info([regs08_str[1]], [regs08_expr[1]])
+r16_ecx = reg_info([regs16_str[1]], [regs16_expr[1]])
+r32_ecx = reg_info([regs32_str[1]], [regs32_expr[1]])
+r64_ecx = reg_info([regs64_str[1]], [regs64_expr[1]])
 
 r_eax_all = reg_info(
     [regs08_str[0], regs16_str[0], regs32_str[0], regs64_str[0]],
@@ -79,6 +82,9 @@ crregs32_str = ["CR%d" % i for i in range(8)]
 crregs32_expr = [ExprId(x, 32) for x in crregs32_str]
 crregs = reg_info(crregs32_str, crregs32_expr)
 
+xcr_regs_str = ["XCR0"]
+xcr_regs_expr = [ExprId(x, 64) for x in xcr_regs_str]
+gpregs_xcr = reg_info(xcr_regs_str, xcr_regs_expr)
 
 drregs32_str = ["DR%d" % i for i in range(8)]
 drregs32_expr = [ExprId(x, 32) for x in drregs32_str]
@@ -227,6 +233,8 @@ reg_cr5 = 'CR5'
 reg_cr6 = 'CR6'
 reg_cr7 = 'CR7'
 
+reg_xcr0 = 'XCR0'
+
 reg_mm0 = 'MM0'
 reg_mm1 = 'MM1'
 reg_mm2 = 'MM2'
@@ -267,6 +275,9 @@ cr4 = ExprId(reg_cr4, 32)
 cr5 = ExprId(reg_cr5, 32)
 cr6 = ExprId(reg_cr6, 32)
 cr7 = ExprId(reg_cr7, 32)
+
+XCR0 = xcr_regs_expr[0]
+xcr0 = ExprId(reg_xcr0, 64)
 
 mm0 = ExprId(reg_mm0, 64)
 mm1 = ExprId(reg_mm1, 64)
@@ -391,7 +402,7 @@ all_regs_ids = [
     float_st0, float_st1, float_st2, float_st3,
     float_st4, float_st5, float_st6, float_st7,
     float_c0, float_c1, float_c2, float_c3,
-    cr0, cr3,
+    cr0, cr3, xcr0,
     dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7,
     float_stack_ptr,
     mm0, mm1, mm2, mm3, mm4, mm5, mm6, mm7,
@@ -414,7 +425,7 @@ all_regs_ids_no_alias = [
     float_st0, float_st1, float_st2, float_st3,
     float_st4, float_st5, float_st6, float_st7,
     float_c0, float_c1, float_c2, float_c3,
-    cr0, cr3,
+    cr0, cr3, xcr0,
     dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7,
     float_stack_ptr,
     mm0, mm1, mm2, mm3, mm4, mm5, mm6, mm7,
