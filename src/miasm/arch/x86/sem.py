@@ -3803,6 +3803,46 @@ def vec_vertical_instr(op, elt_size, apply_on_output=lambda x: x):
     return __vec_vertical_instr_gen(op, elt_size, vec_vertical_sem,
                                     apply_on_output)
 
+# Alternating vertical operation
+
+def vec_alternating_vertical_sem(op1, op2, elt_size, reg_size, dst, src, apply_on_output):
+    assert reg_size % elt_size == 0
+    n = reg_size // elt_size
+    assert n % 2 == 0
+    if op1 == '-' or op2 == '-':
+        ops = [
+            apply_on_output((dst[i * elt_size:(i + 1) * elt_size]
+                             - src[i * elt_size:(i + 1) * elt_size]))
+            for i in range(0, n)
+        ]
+    else:
+        ops = []
+        for i in range(0, n//2):
+            ops.append(apply_on_output(m2_expr.ExprOp(op1, dst[(i*2) * elt_size:((i*2) + 1) * elt_size],
+                                           src[(i*2) * elt_size:((i*2) + 1) * elt_size])))
+            ops.append(apply_on_output(m2_expr.ExprOp(op2, dst[(i*2 + 1) * elt_size:(i*2 + 2) * elt_size],
+                                           src[(i*2 + 1) * elt_size:(i*2 + 2) * elt_size])))
+
+    return m2_expr.ExprCompose(*ops)
+
+
+def __vec_alternating_vertical_instr_gen(op1, op2, elt_size, sem, apply_on_output):
+    def vec_instr(ir, instr, dst, src):
+        e = []
+        if isinstance(src, m2_expr.ExprMem):
+            src = ir.ExprMem(src.ptr, dst.size)
+        reg_size = dst.size
+        e.append(m2_expr.ExprAssign(dst, sem(op1, op2, elt_size, reg_size, dst, src,
+                                          apply_on_output)))
+        return e, []
+    return vec_instr
+
+
+def vec_alternating_vertical_instr(op1, op2, elt_size, apply_on_output=lambda x: x):
+    return __vec_alternating_vertical_instr_gen(op1, op2, elt_size, vec_alternating_vertical_sem,
+                                    apply_on_output)
+
+
 
 def _keep_mul_high(expr, signed=False):
     assert expr.is_op("*") and len(expr.args) == 2
@@ -4001,6 +4041,8 @@ divss = vec_op_clip('fdiv', 32)
 divsd = vec_op_clip('fdiv', 64)
 divps = vec_vertical_instr('fdiv', 32)
 divpd = vec_vertical_instr('fdiv', 64)
+
+addsubps = vec_alternating_vertical_instr('fsub', 'fadd', 32)
 
 # Comparisons (floating-point)
 
@@ -5699,6 +5741,8 @@ mnemo_func = {'mov': mov,
               "subsd": subsd,
               "subps": subps,
               "subpd": subpd,
+
+              "addsubps": addsubps,
 
               # Multiplications
               # SSE

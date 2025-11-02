@@ -4334,6 +4334,10 @@ addop("addpd", [bs8(0x0f), bs8(0x58), pref_66] + rmmod(xmm_reg, rm_arg_xmm))
 addop("subps", [bs8(0x0f), bs8(0x5c), no_xmm_pref] + rmmod(xmm_reg, rm_arg_xmm))
 addop("subpd", [bs8(0x0f), bs8(0x5c), pref_66] + rmmod(xmm_reg, rm_arg_xmm))
 
+## Additions + Subtractions
+# SSE
+addop("addsubps", [bs8(0x0f), bs8(0xd0), pref_f2] + rmmod(xmm_reg, rm_arg_xmm))
+
 ## Multiplications
 # SSE
 addop("mulps", [bs8(0x0f), bs8(0x59), no_xmm_pref] + rmmod(xmm_reg, rm_arg_xmm))
