@@ -932,10 +932,11 @@ class mn_x86(cls_mn):
             return False
         else:
             self.rex_w.value = pre_dis_info['rex_w']
-        self.rex_r.value = pre_dis_info['rex_r']
         self.rex_b.value = pre_dis_info['rex_b']
         self.rex_x.value = pre_dis_info['rex_x']
         self.rex_p.value = pre_dis_info['rex_p']
+        if not (hasattr(self, "ignore_rex_r")):
+            self.rex_r.value = pre_dis_info['rex_r']
 
         self.vex.value = pre_dis_info['vex']
         self.vex_l.value = pre_dis_info['vex_l']
@@ -946,6 +947,9 @@ class mn_x86(cls_mn):
         if hasattr(self, 'no_rex') and\
            (self.rex_r.value or self.rex_b.value or
             self.rex_x.value or self.rex_p.value):
+            return False
+
+        if hasattr(self, 'no_rex_w') and self.rex_w.value:
             return False
 
         if self.vex.value == 0 and (hasattr(self, 'pref_0f')
@@ -3370,6 +3374,9 @@ no_xmm_pref = bs(l=0, fname="no_xmm_pref")
 
 no_rex = bs(l=0, fname="no_rex")
 no_rep = bs(l=0, fname="no_rep")
+no_rex_w = bs(l=0, fname="no_rex_w")
+
+ignore_rex_r = bs(l=0, fname="ignore_rex_r")
 
 sib_scale = bs(l=2, cls=(bs_cond_scale,), fname = "sib_scale")
 sib_index = bs(l=3, cls=(bs_cond_index,), fname = "sib_index")
@@ -3993,12 +4000,15 @@ addop("movupd", [bs8(0x0f), bs8(0x10), pref_66] + rmmod(xmm_reg, rm_arg_xmm), [x
 addop("movupd", [bs8(0x0f), bs8(0x11), pref_66] + rmmod(xmm_reg, rm_arg_xmm), [rm_arg_xmm, xmm_reg])
 
 
-addop("movd", [bs8(0x0f), bs('011'), swapargs, bs('1110'), no_xmm_pref] +
+addop("movd", [bs8(0x0f), bs('011'), swapargs, bs('1110'), no_xmm_pref, no_rex_w] +
       rmmod(mm_reg, rm_arg), [mm_reg, rm_arg])
 addop("movd", [bs8(0x0f), bs('011'), swapargs, bs('1110'), pref_66, bs_opmode32] +
       rmmod(xmm_reg, rm_arg), [xmm_reg, rm_arg])
 addop("movq", [bs8(0x0f), bs('011'), swapargs, bs('1110'), pref_66, bs_opmode64] +
       rmmod(xmm_reg, rm_arg), [xmm_reg, rm_arg])
+
+addop("movq", [bs8(0x0f), bs('011'), swapargs, bs('1110'), no_xmm_pref, bs_opmode64, ignore_rex_r] +
+      rmmod(mm_reg, rm_arg), [mm_reg, rm_arg])
 
 addop("movq", [bs8(0x0f), bs('011'), swapargs, bs('1111'), no_xmm_pref] +
       rmmod(mm_reg, rm_arg_mm_m64), [mm_reg, rm_arg_mm_m64])
