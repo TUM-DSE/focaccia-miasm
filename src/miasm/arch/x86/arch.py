@@ -4321,6 +4321,10 @@ addop("movdq2q", [bs8(0x0f), bs8(0xd6), pref_f2] +
 addop("movq2dq", [bs8(0x0f), bs8(0xd6), pref_f3] +
       rmmod(xmm_reg, rm_arg_mm))
 
+# AVX
+addop("vmovdqu", [bs("011"), swapargs, bs("1111"), pref_f3, pref_0f] +
+      rmmod(ymm_reg, rm_arg_ymm), [ymm_reg, rm_arg_ymm])
+
 ## Additions
 # SSE
 addop("paddb", [bs8(0x0f), bs8(0xfc), pref_66] + rmmod(xmm_reg, rm_arg_xmm))
