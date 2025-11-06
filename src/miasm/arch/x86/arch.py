@@ -4416,23 +4416,23 @@ addop("maxsd", [bs8(0x0f), bs8(0x5f), pref_f2] + rmmod(xmm_reg, rm_arg_xmm_m64))
 addop("maxss", [bs8(0x0f), bs8(0x5f), pref_f3] + rmmod(xmm_reg, rm_arg_xmm_m32))
 
 for cond_name, value in [
-        ("eq", 0x00),
-        ("lt", 0x01),
-        ("le", 0x02),
-        ("unord", 0x03),
-        ("neq", 0x04),
-        ("nlt", 0x05),
-        ("nle", 0x06),
-        ("ord", 0x07),
+        ("eq", "000"),
+        ("lt", "001"),
+        ("le", "010"),
+        ("unord", "011"),
+        ("neq", "100"),
+        ("nlt", "101"),
+        ("nle", "110"),
+        ("ord", "111"),
 ]:
     addop("cmp%sps" % cond_name, [bs8(0x0f), bs8(0xc2), no_xmm_pref] +
-          rmmod(xmm_reg, rm_arg_xmm_m64) + [bs8(value)])
+          rmmod(xmm_reg, rm_arg_xmm_m64) + [bs(l=5), bs(value)])
     addop("cmp%spd" % cond_name, [bs8(0x0f), bs8(0xc2), pref_66] +
-          rmmod(xmm_reg, rm_arg_xmm_m64) + [bs8(value)])
+          rmmod(xmm_reg, rm_arg_xmm_m64) + [bs(l=5), bs(value)])
     addop("cmp%sss" % cond_name, [bs8(0x0f), bs8(0xc2), pref_f3] +
-          rmmod(xmm_reg, rm_arg_xmm_m32) + [bs8(value)])
+          rmmod(xmm_reg, rm_arg_xmm_m32) + [bs(l=5), bs(value)])
     addop("cmp%ssd" % cond_name, [bs8(0x0f), bs8(0xc2), pref_f2] +
-          rmmod(xmm_reg, rm_arg_xmm_m32) + [bs8(value)])
+          rmmod(xmm_reg, rm_arg_xmm_m32) + [bs(l=5), bs(value)])
 
 
 
