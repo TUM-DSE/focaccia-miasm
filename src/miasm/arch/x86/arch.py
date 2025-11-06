@@ -185,6 +185,7 @@ gpreg = (
     gpregs64.parser |
     gpregs_xmm.parser |
     gpregs_mm.parser |
+    gpregs_ymm.parser |
     gpregs_bnd.parser
 )
 
@@ -226,9 +227,11 @@ DWORD = Literal('DWORD')
 QWORD = Literal('QWORD')
 TBYTE = Literal('TBYTE')
 XMMWORD = Literal('XMMWORD')
+YMMWORD = Literal('YMMWORD')
 
 MEMPREFIX2SIZE = {'BYTE': 8, 'WORD': 16, 'DWORD': 32,
-                  'QWORD': 64, 'TBYTE': 80, 'XMMWORD': 128}
+                  'QWORD': 64, 'TBYTE': 80, 'XMMWORD': 128,
+                  'YMMWORD': 256}
 
 SIZE2MEMPREFIX = dict((value, key) for key, value in viewitems(MEMPREFIX2SIZE))
 
@@ -242,7 +245,7 @@ def cb_deref_mem(tokens):
         return AstMem(AstOp('segm', segm, ptr), MEMPREFIX2SIZE[s])
     raise ValueError('len(tokens) > 3')
 
-mem_size = (BYTE | DWORD | QWORD | WORD | TBYTE | XMMWORD)
+mem_size = (BYTE | DWORD | QWORD | WORD | TBYTE | XMMWORD | YMMWORD)
 deref_mem = (mem_size + PTR + Optional((base_expr + COLON))+ deref_mem_ad).setParseAction(cb_deref_mem)
 
 
@@ -254,7 +257,8 @@ rmarg = (
     gpregs64.parser |
     gpregs_mm.parser |
     gpregs_xmm.parser |
-    gpregs_bnd.parser
+    gpregs_bnd.parser |
+    gpregs_ymm.parser
 )
 
 rmarg |= deref_mem
@@ -857,16 +861,20 @@ class mn_x86(cls_mn):
             pre_dis_info['rex_x'] = 0
             pre_dis_info['rex_b'] = 0
             pre_dis_info['rex_w'] = 0
+            pre_dis_info['vex_m'] = 1
             pre_dis_info['vex_l'] = (c >> 2) & 1
             pre_dis_info['vex_p'] = c & int('0b11', 2)
             offset += 1
 
             if pre_dis_info['vex_p'] == 1:
                 pre_dis_info['opmode'] = 1
+                pre_dis_info['prefix'] += b'\x66'
             elif pre_dis_info['vex_p'] == 3:
                 pre_dis_info['g1'] = 2
+                pre_dis_info['prefix'] += b'\xf2'
             elif pre_dis_info['vex_p'] == 2:
                 pre_dis_info['g1'] = 12
+                pre_dis_info['prefix'] += b'\xf3'
 
         elif pre_dis_info.get('g1', None) == 12 and c in [b'\xa6', b'\xa7', b'\xae', b'\xaf']:
             pre_dis_info['g1'] = 4
@@ -2051,7 +2059,7 @@ def expr2modrm(expr, parent, w8, sx=0, xmm=0, mm=0, bnd=0):
         return [dct_expr], None, True
     return parse_mem(expr, parent, w8, sx, xmm, mm, bnd)
 
-def modrm2expr(modrm, parent, w8, sx=0, xmm=0, mm=0, bnd=0):
+def modrm2expr(modrm, parent, w8, sx=0, xmm=0, mm=0, bnd=0, ymm=0):
     o = []
     if not modrm[f_isad]:
         modrm_k = [key for key, value in viewitems(modrm) if value == 1]
@@ -2072,6 +2080,8 @@ def modrm2expr(modrm, parent, w8, sx=0, xmm=0, mm=0, bnd=0):
             expr = gpregs_mm.expr[modrm_k]
         elif bnd:
             expr = gpregs_bnd.expr[modrm_k]
+        elif ymm:
+            expr = gpregs_ymm.expr[modrm_k]
         elif opmode == 8 and (parent.v_opmode() == 64 or parent.rex_p.value == 1):
             expr = gpregs08_64.expr[modrm_k]
         else:
@@ -2105,6 +2115,8 @@ def modrm2expr(modrm, parent, w8, sx=0, xmm=0, mm=0, bnd=0):
         opmode = 64
     elif bnd:
         opmode = 128
+    elif ymm:
+        opmode = 256
 
     expr = ExprMem(expr, size=opmode)
     return expr
@@ -2523,11 +2535,12 @@ class x86_rm_mm(x86_rm_m80):
     is_mm = True
     is_xmm = False
     is_bnd = False
+    is_ymm = False
 
     def decode(self, v):
         p = self.parent
         xx = self.get_modrm()
-        expr = modrm2expr(xx, p, 0, 0, self.is_xmm, self.is_mm, self.is_bnd)
+        expr = modrm2expr(xx, p, 0, 0, self.is_xmm, self.is_mm, self.is_bnd, self.is_ymm)
         if isinstance(expr, ExprMem):
             if self.msize is None:
                 return False
@@ -2585,6 +2598,11 @@ class x86_rm_xmm_m128(x86_rm_mm):
     is_mm = False
     is_xmm = True
 
+class x86_rm_ymm(x86_rm_mm):
+    msize = 256
+    is_mm = False
+    is_xmm = False
+    is_ymm = True
 
 class x86_rm_xmm_reg(x86_rm_mm):
     msize = None
@@ -2738,6 +2756,9 @@ class x86_rm_reg_mm(x86_rm_reg_noarg, x86_arg):
 
 class x86_rm_reg_xmm(x86_rm_reg_mm):
     selreg = gpregs_xmm
+
+class x86_rm_reg_ymm(x86_rm_reg_mm):
+    selreg = gpregs_ymm
 
 class x86_rm_reg_bnd(x86_rm_reg_mm):
     selreg = gpregs_bnd
@@ -3475,6 +3496,7 @@ mm_reg = bs(l=3, cls=(x86_rm_reg_mm, ), order =1, fname = "reg")
 xmm_reg = bs(l=3, cls=(x86_rm_reg_xmm, ), order =1, fname = "reg")
 bnd_reg = bs(l=3, cls=(x86_rm_reg_bnd, ), order =1, fname = "reg")
 
+ymm_reg = bs(l=3, cls=(x86_rm_reg_ymm, ), order =1, fname = "reg")
 
 fltreg = bs(l=3, cls=(x86_rm_flt, ), order =1, fname = "reg")
 
@@ -3511,6 +3533,8 @@ rm_arg_bnd = bs(l=0, cls=(x86_rm_bnd,), fname='rmarg')
 rm_arg_bnd_m64 = bs(l=0, cls=(x86_rm_bnd_m64,), fname='rmarg')
 rm_arg_bnd_m128 = bs(l=0, cls=(x86_rm_bnd_m128,), fname='rmarg')
 rm_arg_bnd_reg = bs(l=0, cls=(x86_rm_bnd_reg,), fname='rmarg')
+
+rm_arg_ymm = bs(l=0, cls=(x86_rm_ymm,), fname='rmarg')
 
 
 swapargs = bs_swapargs(l=1, fname="swap", mn_mod=list(range(1 << 1)))
@@ -4296,6 +4320,10 @@ addop("movdq2q", [bs8(0x0f), bs8(0xd6), pref_f2] +
       rmmod(mm_reg, rm_arg_xmm_reg), [mm_reg, rm_arg_xmm_reg])
 addop("movq2dq", [bs8(0x0f), bs8(0xd6), pref_f3] +
       rmmod(xmm_reg, rm_arg_mm))
+
+# AVX
+addop("vmovdqu", [bs("011"), swapargs, bs("1111"), pref_f3, pref_0f] +
+      rmmod(ymm_reg, rm_arg_ymm), [ymm_reg, rm_arg_ymm])
 
 ## Additions
 # SSE
