@@ -38,6 +38,9 @@ regs64_expr = [ExprId(x, 64) for x in regs64_str]
 regs_xmm_str = ["XMM%d" % i for i in range(16)]
 regs_xmm_expr = [ExprId(x, 128) for x in regs_xmm_str]
 
+regs_ymm_str = ["YMM%d" % i for i in range(16)]
+regs_ymm_expr = [ExprId(x, 256) for x in regs_ymm_str]
+
 regs_mm_str = ["MM%d" % i for i in range(16)]
 regs_mm_expr = [ExprId(x, 64) for x in regs_mm_str]
 
@@ -51,6 +54,7 @@ gpregs32 = reg_info(regs32_str, regs32_expr)
 gpregs64 = reg_info(regs64_str, regs64_expr)
 
 gpregs_xmm = reg_info(regs_xmm_str, regs_xmm_expr)
+gpregs_ymm = reg_info(regs_ymm_str, regs_ymm_expr)
 gpregs_mm = reg_info(regs_mm_str, regs_mm_expr)
 gpregs_bnd = reg_info(regs_bnd_str, regs_bnd_expr)
 
@@ -305,6 +309,23 @@ XMM13 = regs_xmm_expr[13]
 XMM14 = regs_xmm_expr[14]
 XMM15 = regs_xmm_expr[15]
 
+YMM0 = regs_ymm_expr[0]
+YMM1 = regs_ymm_expr[1]
+YMM2 = regs_ymm_expr[2]
+YMM3 = regs_ymm_expr[3]
+YMM4 = regs_ymm_expr[4]
+YMM5 = regs_ymm_expr[5]
+YMM6 = regs_ymm_expr[6]
+YMM7 = regs_ymm_expr[7]
+YMM8 = regs_ymm_expr[8]
+YMM9 = regs_ymm_expr[9]
+YMM10 = regs_ymm_expr[10]
+YMM11 = regs_ymm_expr[11]
+YMM12 = regs_ymm_expr[12]
+YMM13 = regs_ymm_expr[13]
+YMM14 = regs_ymm_expr[14]
+YMM15 = regs_ymm_expr[15]
+
 # tmp1= ExprId(reg_tmp1)
 zf = ExprId(reg_zf, size=1)
 nf = ExprId(reg_nf, size=1)
@@ -410,6 +431,8 @@ all_regs_ids = [
     XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7,
     XMM8, XMM9, XMM10, XMM11, XMM12, XMM13, XMM14, XMM15,
 
+    YMM0, YMM1, YMM2, YMM3, YMM4, YMM5, YMM6, YMM7,
+    YMM8, YMM9, YMM10, YMM11, YMM12, YMM13, YMM14, YMM15,
 
     exception_flags, interrupt_num,
 ] + fltregs32_expr
@@ -431,6 +454,8 @@ all_regs_ids_no_alias = [
     mm0, mm1, mm2, mm3, mm4, mm5, mm6, mm7,
     XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6, XMM7,
     XMM8, XMM9, XMM10, XMM11, XMM12, XMM13, XMM14, XMM15,
+    YMM0, YMM1, YMM2, YMM3, YMM4, YMM5, YMM6, YMM7,
+    YMM8, YMM9, YMM10, YMM11, YMM12, YMM13, YMM14, YMM15,
 
 
     exception_flags, interrupt_num,
