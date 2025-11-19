@@ -2084,6 +2084,8 @@ aarch64op("ldursh", [bs('01'), bs('111'), bs('0'), bs('00'), bs('1'), sf, bs('0'
 aarch64op("ldursw", [bs('10'), bs('111'), bs('0'), bs('00'), bs('10'), bs('0'), simm9, bs('00'), rn64_deref, rt64], [rt64, rn64_deref ])
 aarch64op("ldst",   [bs('1'), sf, bs('111'), bs('0'), bs('00'), bs('0'), bs_ldst_u_name, bs('0'), simm9, bs('00'), rn64_deref, rt], [rt, rn64_deref ])
 
+aarch64op("ldapur",   [bs('1'), sf, bs('011001'), bs('01'), bs('0'), simm9, bs('00'), rn64_deref, rt], [rt, rn64_deref ])
+
 aarch64op("ldstu",  [sdsize, bs('111'), bs('1'), bs('00'), bs('0'), bs_ldst_u_name, bs('0'), simm9, bs('00'), rn64_deref, sd], [sd, rn64_deref ])
 aarch64op("ldst",   [bs('00'), bs('111'), bs('1'), bs('00'), bs('1'), bs_ldst_1u_name, bs('0'), simm9, bs('00'), rn64_deref, sd128], [sd128, rn64_deref ])
 

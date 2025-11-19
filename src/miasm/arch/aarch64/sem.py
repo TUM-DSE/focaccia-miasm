@@ -2328,6 +2328,8 @@ mnemo_func.update({
     'ldsmaxh': ldsmax,
     'ldsmaxw': ldsmax,
     'ldsmax': ldsmax,
+
+    'ldapur': ldr,
 })
 
 
