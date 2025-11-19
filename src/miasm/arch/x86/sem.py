@@ -5623,6 +5623,7 @@ mnemo_func = {'mov': mov,
               "movd": movd,
               "movdqu": movdqu,
               "movdqa": movdqu,
+              "vmovdqu": movdqu,
               "movapd": movapd,  # XXX TODO alignment check
               "movupd": movapd,  # XXX TODO alignment check
               "movaps": movapd,  # XXX TODO alignment check
