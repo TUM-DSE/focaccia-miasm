@@ -2246,6 +2246,7 @@ mnemo_func.update({
     'ldrh': ldrh,
 
     'ldur': ldr,
+    'ldapur': ldr,  # TODO memory barrier
     'ldurb': ldrb,
     'ldursb': ldrsb,
     'ldurh': ldrh,

@@ -1853,6 +1853,9 @@ reg_tests_aarch64 = [
 
     ("XXXXXXXX    LDSMAX     X0, X2, X1",
      "224020F8"),
+
+    ("XXXXXXXX    LDAPUR     X0, [X1, 0xFFFFFFFFFFFFFFF8]",
+     "20805FD9"),
 ]
 
 
